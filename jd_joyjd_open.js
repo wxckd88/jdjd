@@ -1,22 +1,36 @@
-if (!["card","car"].includes(process.env.FS_LEVEL)) {
-    console.log("请设置通用加购/开卡环境变量FS_LEVEL为\"car\"(或\"card\"开卡+加购)来运行加购脚本")
-    return
-}
 /*
-#jd_joyjd_open通用ID任务，多个活动用@连接，任务连接https://jdjoy.jd.com/module/task/v2/doTask
-export comm_activityIDList="af2b3d56e22d43afa0c50622c45ca2a3"
+JoyJd任务脚本
+已支持IOS双京东账号,Node.js支持N个京东账号
+脚本兼容: QuantumultX, Surge, Loon, JSBox, Node.js
+jd_joyjd_open通用ID任务，多个活动用@连接，任务连接https://jdjoy.jd.com/module/task/v2/doTask
+export comm_activityIDList="af2b3d56e22d43afa0c50622c45ca2a3"  
 export comm_endTimeList="1639756800000"
 export comm_tasknameList="京东工业品抽奖"
+
 即时任务，无需cron,短期或者长期请参考活动规则设置cron
+============Quantumultx===============
+[task_local]
+#JoyJd任务脚本
+5 2,18 * * * https://raw.githubusercontent.com/KingRan/JDJB/main/jd_joyjd_open.js, tag=JoyJd任务脚本, img-url=https://raw.githubusercontent.com/Orz-3/mini/master/Color/jd.png, enabled=true
+
+================Loon==============
+[Script]
+cron "5 2,18 * * *" script-path=https://raw.githubusercontent.com/KingRan/JDJB/main/jd_joyjd_open.js,tag=JoyJd任务脚本
+
+===============Surge=================
+JoyJd任务脚本 = type=cron,cronexp="5 2,18 * * *",wake-system=1,timeout=3600,script-path=https://raw.githubusercontent.com/KingRan/JDJB/main/jd_joyjd_open.js
+
+============小火箭=========
+JoyJd任务脚本 = type=cron,script-path=https://raw.githubusercontent.com/KingRan/JDJB/main/jd_joyjd_open.js, cronexpr="5 2,18 * * *", timeout=3600, enable=true
 */
-const $ = new Env('jd_joyjd_open通用ID任务');
+const $ = new Env('JoyJd任务脚本');
 const jdCookieNode = $.isNode() ? require('./jdCookie.js') : '';
 const notify = $.isNode() ? require('./sendNotify') : '';
 let cookiesArr = [];
-let activityIDList = '';
+let activityIDList = '';     
 let endTimeList = '';
 let tasknameList = '';
-let activityIDArr = [];
+let activityIDArr = [];     
 let endTimeArr = [];
 let tasknameArr = [];
 let activityID = '', endTime = '', taskname = '';
@@ -42,10 +56,7 @@ if ($.isNode()) {
     }
     if (!activityIDList) {
         $.log(`没有通用ID任务，尝试获取远程`);
-        let data = await getData("https://raw.githubusercontent.com/Ca11back/scf-experiment/master/json/joyjd_open.json")
-        if (!data) {
-            data = await getData("https://raw.fastgit.org/Ca11back/scf-experiment/master/json/joyjd_open.json")
-        }
+        let data = await getData("https://cdn.jsdelivr.net/gh/KingRan/shareCodes@master/joyjd_open.json")
         if (data.activityIDList && data.activityIDList.length) {
             $.log(`获取到远程且有数据`);
             activityIDList = data.activityIDList.join('@')
@@ -58,67 +69,67 @@ if ($.isNode()) {
     }
     console.log(`通用ID任务就位，准备开始薅豆`);
     for (let i = 0; i < cookiesArr.length; i++) {
-        if (cookiesArr[i]) {
-            await getUA();
-            $.index = i + 1;
-            $.cookie = cookiesArr[i];
-            $.oldcookie = cookiesArr[i];
-            $.isLogin = true;
-            $.nickName = '';
-            await TotalBean();
-            $.UserName = decodeURIComponent($.cookie.match(/pt_pin=([^; ]+)(?=;?)/) && $.cookie.match(/pt_pin=([^; ]+)(?=;?)/)[1]);
-            console.log(`\n*****开始【京东账号${$.index}】${$.nickName || $.UserName}*****\n`);
-            if (!$.isLogin) {
-                $.msg($.name, `【提示】cookie已失效`, `京东账号${$.index} ${$.nickName || $.UserName}\n请重新登录获取\nhttps://bean.m.jd.com/bean/signIndex.action`, {"open-url": "https://bean.m.jd.com/bean/signIndex.action"});
-                if ($.isNode()) {
-                    await notify.sendNotify(`${$.name}cookie已失效 - ${$.UserName}`, `京东账号${$.index} ${$.UserName}\n请重新登录获取cookie`);
-                }
-                continue
+       if (cookiesArr[i]) {
+        await getUA();
+        $.index = i + 1;
+        $.cookie = cookiesArr[i];
+        $.oldcookie = cookiesArr[i];
+        $.isLogin = true;
+        $.nickName = '';
+        //await TotalBean();
+        $.UserName = decodeURIComponent($.cookie.match(/pt_pin=([^; ]+)(?=;?)/) && $.cookie.match(/pt_pin=([^; ]+)(?=;?)/)[1]);
+        console.log(`\n*****开始【京东账号${$.index}】${$.nickName || $.UserName}*****\n`);
+        if (!$.isLogin) {
+            $.msg($.name, `【提示】cookie已失效`, `京东账号${$.index} ${$.nickName || $.UserName}\n请重新登录获取\nhttps://bean.m.jd.com/bean/signIndex.action`, {"open-url": "https://bean.m.jd.com/bean/signIndex.action"});
+            if ($.isNode()) {
+                await notify.sendNotify(`${$.name}cookie已失效 - ${$.UserName}`, `京东账号${$.index} ${$.UserName}\n请重新登录获取cookie`);
             }
-            let activityIDArr = activityIDList.split("@");
-            let endTimeArr = endTimeList.split("@");
-            let tasknameArr = tasknameList.split("@");
-            for (let j = 0; j < activityIDArr.length; j++) {
-                activityID = activityIDArr[j]
-                endTime = endTimeArr[j]
-                taskname = tasknameArr[j]
-                $.fp =  randomString();
-                $.eid =  randomString(90).toUpperCase();
-                console.log(`通用活动任务ID：${activityID}，结束时间：${endTime}，活动名称：${taskname}`);
-                if($.endTime && Date.now() > $.endTime){
-                    console.log(`活动已结束\n`);
-                    continue;
-                }
-                await main();
-                await $.wait(2000);
-                console.log('\n')
-            }
+            continue
         }
-    }
+        let activityIDArr = activityIDList.split("@");
+        let endTimeArr = endTimeList.split("@");
+        let tasknameArr = tasknameList.split("@");
+        for (let j = 0; j < activityIDArr.length; j++) {
+        activityID = activityIDArr[j]
+        endTime = endTimeArr[j]
+        taskname = tasknameArr[j]
+        $.fp =  randomString();
+        $.eid =  randomString(90).toUpperCase();
+        console.log(`通用活动任务ID：${activityID}，结束时间：${endTime}，活动名称：${taskname}`);
+        if($.endTime && Date.now() > $.endTime){
+            console.log(`活动已结束\n`);
+             continue;
+        }
+        await main();
+        await $.wait(2000);
+        console.log('\n')
+        }
+     }
+   }
 })().catch((e) => {$.log('', `❌ ${$.name}, 失败! 原因: ${e}!`, '')}).finally(() => {$.done();});
 
 function getData(url) {
-    return new Promise(async resolve => {
-        const options = {
-            url: `${url}?${new Date()}`, "timeout": 10000, headers: {
-                "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1 Edg/87.0.4280.88"
-            }
-        };
-        $.get(options, async (err, resp, data) => {
-            try {
-                if (err) {
-                } else {
-                    if (data) data = JSON.parse(data)
-                }
-            } catch (e) {
-                // $.logErr(e, resp)
-            } finally {
-                resolve(data);
-            }
-        })
-        await $.wait(10000)
-        resolve();
+  return new Promise(async resolve => {
+    const options = {
+      url: `${url}?${new Date()}`, "timeout": 10000, headers: {
+        "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1 Edg/87.0.4280.88"
+      }
+    };
+    $.get(options, async (err, resp, data) => {
+      try {
+        if (err) {
+        } else {
+          if (data) data = JSON.parse(data)
+        }
+      } catch (e) {
+        // $.logErr(e, resp)
+      } finally {
+        resolve(data);
+      }
     })
+    await $.wait(10000)
+    resolve();
+  })
 }
 
 async function main() {
