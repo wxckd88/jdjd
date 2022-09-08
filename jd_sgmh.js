@@ -11,27 +11,30 @@
 [task_local]
 #闪购盲盒
 20 8 * * * https://gitee.com/lxk0301/jd_scripts/raw/master/jd_sgmh.js, tag=闪购盲盒, img-url=https://raw.githubusercontent.com/Orz-3/task/master/jd.png, enabled=true
+
 ================Loon==============
 [Script]
 cron "20 8 * * *" script-path=https://gitee.com/lxk0301/jd_scripts/raw/master/jd_sgmh.js, tag=闪购盲盒
+
 ===============Surge=================
 闪购盲盒 = type=cron,cronexp="20 8 * * *",wake-system=1,timeout=3600,script-path=https://gitee.com/lxk0301/jd_scripts/raw/master/jd_sgmh.js
+
 ============小火箭=========
 闪购盲盒 = type=cron,script-path=https://gitee.com/lxk0301/jd_scripts/raw/master/jd_sgmh.js, cronexpr="20 8 * * *", timeout=3600, enable=true
+
  */
 const $ = new Env('闪购盲盒');
 //Node.js用户请在jdCookie.js处填写京东ck;
 const jdCookieNode = $.isNode() ? require('./jdCookie.js') : '';
 let appId = '1EFRXxg' , homeDataFunPrefix = 'interact_template', collectScoreFunPrefix = 'harmony', message = ''
 let lotteryResultFunPrefix = homeDataFunPrefix, browseTime = 6
-const inviteCodes = [
-  'T0225KkcRU8Y9FaEIh_3wPAKcQCjVQmoaT5kRrbA'
-];
+const inviteCodes = ['T0225KkcRUxL9FKDJh7ylvMLcACjVWmIaW5kRrbA','T0225KkcRx0Q_AaCdRr1xf8DIQCjVWmIaW5kRrbA','T0225KkcRksZpgDSIBj3xvADdQCjVWmIaW5kRrbA','T018v_52Qxge81HeJB2b1ACjVWmIaW5kRrbA','T0205KkcPFd_vD2uSkCi3YhXCjVWmIaW5kRrbA','T018v_hzQhwZ8FbUIRib1ACjVQmoaT5kRrbA'].sort(() => 0.5 - Math.random()).splice(0,3)
 const ZLC = !(process.env.JD_JOIN_ZLC && process.env.JD_JOIN_ZLC === 'false')
+const JD_ZLC_URL=process.env.JD_ZLC_URL?process.env.JD_ZLC_URL:"http://zlc1.chaoyi996.com:8880";
 const randomCount = $.isNode() ? 20 : 5;
 const notify = $.isNode() ? require('./sendNotify') : '';
 let merge = {}
-let myInviteCode;
+let self_code = []
 //IOS等用户直接用NobyDa的jd cookie
 let cookiesArr = [], cookie = '';
 if ($.isNode()) {
@@ -123,7 +126,7 @@ function interact_template_getHomeData(timeout = 0) {
             //签到
             if (data.data.result.taskVos[i].taskName === '邀请好友助力') {
               console.log(`\n【京东账号${$.index}（${$.UserName}）的${$.name}好友互助码】${data.data.result.taskVos[i].assistTaskDetailVo.taskToken}\n`);
-              myInviteCode = data.data.result.taskVos[i].assistTaskDetailVo.taskToken;
+              self_code.push(data.data.result.taskVos[i].assistTaskDetailVo.taskToken)
               for (let code of $.newShareCodes) {
                 if (!code) continue
                 const c =  await harmony_collectScore(code, data.data.result.taskVos[i].taskId);
@@ -308,44 +311,51 @@ function shareCodesFormat() {
     // console.log(`第${$.index}个京东账号的助力码:::${$.shareCodesArr[$.index - 1]}`)
     $.newShareCodes = [];
     if ($.shareCodesArr[$.index - 1]) {
+      console.log('检测到助力码环境变量,在前')
       $.newShareCodes = $.shareCodesArr[$.index - 1].split('@');
-    } else {
-      console.log(`由于您第${$.index}个京东账号未提供shareCode,将采纳本脚本自带的助力码\n`)
-      const tempIndex = $.index > inviteCodes.length ? (inviteCodes.length - 1) : ($.index - 1);
-      $.newShareCodes = inviteCodes[tempIndex].split('@');
     }
+    $.newShareCodes = [...new Set([...$.newShareCodes, ...self_code,...inviteCodes])]
     if (!ZLC) {
       console.log(`您设置了不加入助力池，跳过\n`)
+    } else {
+      const readShareCodeRes = await readShareCode();
+      if (readShareCodeRes && readShareCodeRes.code === 200) {
+        $.newShareCodes = [...new Set([...$.newShareCodes, ...(readShareCodeRes.data || [])])]
+      }
     }
     console.log(`第${$.index}个京东账号将要助力的好友${JSON.stringify($.newShareCodes)}`)
     resolve();
   })
 }
 
-//提交互助码
-// function submitCode() {
-//   return new Promise(async resolve => {
-//   $.get({url: `http://www.helpu.cf/jdcodes/submit.php?code=${myInviteCode}&type=sgmh`, timeout: 10000}, (err, resp, data) => {
-//     try {
-//       if (err) {
-//         console.log(`${JSON.stringify(err)}`)
-//         console.log(`${$.name} API请求失败，请检查网路重试`)
-//       } else {
-//         if (data) {
-//           //console.log(`随机取个${randomCount}码放到您固定的互助码后面(不影响已有固定互助)`)
-//           data = JSON.parse(data);
-//         }
-//       }
-//     } catch (e) {
-//       $.logErr(e, resp)
-//     } finally {
-//       resolve(data);
-//     }
-//   })
-//   await $.wait(15000);
-//   resolve()
-// })
-// }
+function readShareCode() {
+  console.log(`当前使用助力池${JD_ZLC_URL}`);
+  return new Promise(async resolve => {
+    $.get({
+      url: `${JD_ZLC_URL}/sgmh`,
+      'timeout': 10000
+    }, (err, resp, data) => {
+      try {
+        if (err) {
+          console.log(`${JSON.stringify(err)}`)
+          console.log(`${$.name} API请求失败，请检查网路重试`)
+        } else {
+          if (data) {
+            console.log(`随机取${randomCount}个码放到您固定的互助码后面(不影响已有固定互助)`)
+            data = JSON.parse(data);
+          }
+        }
+      } catch (e) {
+        $.logErr(e, resp)
+      } finally {
+        resolve(data);
+      }
+    })
+    await $.wait(2000);
+    resolve()
+  })
+}
+
 function TotalBean() {
   return new Promise(async resolve => {
     const options = {

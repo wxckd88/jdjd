@@ -11,11 +11,14 @@
 [task_local]
 #京东极速版红包
 20 0,22 * * * jd_speed_redpocke.js, tag=京东极速版红包, img-url=https://raw.githubusercontent.com/Orz-3/mini/master/Color/jd.png, enabled=true
+
 ================Loon==============
 [Script]
 cron "20 0,22 * * *" script-path=jd_speed_redpocke.js,tag=京东极速版红包
+
 ===============Surge=================
 京东极速版红包 = type=cron,cronexp="20 0,22 * * *",wake-system=1,timeout=3600,script-path=jd_speed_redpocke.js
+
 ============小火箭=========
 京东极速版红包 = type=cron,script-path=jd_speed_redpocke.js, cronexpr="20 0,22 * * *", timeout=3600, enable=true
 */
@@ -27,6 +30,7 @@ let cookiesArr = [], cookie = '', message;
 const linkIdArr = ["Eu7-E0CUzqYyhZJo9d3YkQ"];
 const signLinkId = '9WA12jYGulArzWS7vcrwhw';
 let linkId;
+let blackfail;
 if ($.isNode()) {
   Object.keys(jdCookieNode).forEach((item) => {
     cookiesArr.push(jdCookieNode[item])
@@ -37,13 +41,13 @@ if ($.isNode()) {
   cookiesArr = [$.getdata('CookieJD'), $.getdata('CookieJD2'), ...jsonParse($.getdata('CookiesJD') || "[]").map(item => item.cookie)].filter(item => !!item);
 }
 !(async () => {
-  console.log(`\n【如提示活动火爆,可再执行一次尝试】\n`);
   if (!cookiesArr[0]) {
     $.msg($.name, '【提示】请先获取京东账号一cookie\n直接使用NobyDa的京东签到获取', 'https://bean.m.jd.com/bean/signIndex.action', {"open-url": "https://bean.m.jd.com/bean/signIndex.action"});
     return;
   }
   for (let i = 0; i < cookiesArr.length; i++) {
     if (cookiesArr[i]) {
+      console.log(`\n如提示活动火爆,可再执行一次尝试\n`);
       cookie = cookiesArr[i];
       $.UserName = decodeURIComponent(cookie.match(/pt_pin=([^; ]+)(?=;?)/) && cookie.match(/pt_pin=([^; ]+)(?=;?)/)[1])
       $.index = i + 1;
@@ -76,17 +80,14 @@ if ($.isNode()) {
 
 async function jsRedPacket() {
   try {
-	$.openfan = true;
     await invite2();
-    //await sign();//极速版签到提现
+    // await sign();//极速版签到提现
     await reward_query();
-    for (let i = 0; i < 3; ++i) {
-	if ($.openfan) {
-      await redPacket();//开红包
-      await $.wait(5000)
-	  }
-    }
-    await getPacketList();//领红包提现
+    // for (let i = 0; i < 3; ++i) {
+    //   await redPacket();//开红包
+    //   await $.wait(2000)
+    // }
+    // await getPacketList();//领红包提现
     await signPrizeDetailList();
     await showMsg()
   } catch (e) {
@@ -150,7 +151,7 @@ async function sign() {
 function reward_query() {
   return new Promise(resolve => {
     $.get(taskGetUrl("spring_reward_query", {
-      "inviter": ["aN8mFXv3ct4DsDWk6uKZew"][Math.floor((Math.random() * 1))],
+      "inviter": ["HXZ60he5XxG8XNUF2LSrZg"][Math.floor((Math.random() * 1))],
       linkId
     }), async (err, resp, data) => {
       try {
@@ -160,10 +161,16 @@ function reward_query() {
         } else {
           if (safeGet(data)) {
             data = JSON.parse(data);
-            if (data.code === 0) {
-
-            } else {
-              console.log(data.errMsg)
+            if (data.code != 0) {
+              console.log('账号领红包貌似黑了，请手动进入活动查看')
+              blackfail = true
+			} else {
+			  console.log('领红包次数剩余：' + data.data.remainChance)
+				for (let i = 0; i < data.data.remainChance; ++i) {
+				await redPacket();//开红包
+				await $.wait(5000)
+				}
+				await getPacketList();//领红包提现
             }
           }
         }
@@ -177,7 +184,7 @@ function reward_query() {
 }
 async function redPacket() {
   return new Promise(resolve => {
-    $.get(taskGetUrl("spring_reward_receive",{"inviter":["aN8mFXv3ct4DsDWk6uKZew"][Math.floor((Math.random() * 1))], linkId}),
+    $.get(taskGetUrl("spring_reward_receive",{"inviter":["HXZ60he5XxG8XNUF2LSrZg"][Math.floor((Math.random() * 1))], linkId}),
         async (err, resp, data) => {
           try {
             if (err) {
@@ -194,7 +201,6 @@ async function redPacket() {
                     console.log("获得优惠券")
                   }
                 } else {
-				  $.openfan = false;
                   console.log(data.errMsg)
                 }
               }
@@ -396,8 +402,8 @@ function cashOut(id,poolBaseId,prizeGroupId,prizeBaseId,) {
 
 function invite2() {
   let inviterIdArr = [
-    "9vOskAagcMJ4EOWXPQSS9A==",
-    "9irilvenEupYF488TUrl19DLuKQ9zWnXYHf9anC0ujw="
+    "wXX9SjXOdYMWe5Ru/1+x9A==",
+	"EX5edGJ14b70ZUglRq7IMmT3GewOP9IL/BN3k2dfrjw=",
   ]
   let inviterId = inviterIdArr[Math.floor((Math.random() * inviterIdArr.length))]
   let options = {
