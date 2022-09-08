@@ -1,8 +1,3 @@
-/*
- * @Date: 2021-10-15 17:21:26
- * @LastEditors: LiJinGang
- * @LastEditTime: 2021-10-15 17:21:27
- */
 const UA = require('./USER_AGENTS.js').USER_AGENT;
 
 const navigator = {
