@@ -1,17 +1,18 @@
+
 /*
 财富岛兑换红包
 作者：gaoyucindy
 ============Quantumultx===============
 [task_local]
 #财富岛兑换红包
-58 * * * * https://raw.githubusercontent.com/okyyds/yydspure/master/jd_cfd.hb.js, tag=财富岛兑换红包, enabled=true
+50 * * * * https://raw.githubusercontent.com/shufflewzc/faker2/main/jd_cfd.hb.js, tag=财富岛兑换红包, enabled=true
 ===========Loon============
 [Script]
-cron "58 * * * *" script-path=https://raw.githubusercontent.com/okyyds/yydspure/master/jd_cfd.hb.js,tag=财富岛兑换红包
+cron "50 * * * *" script-path=https://raw.githubusercontent.com/shufflewzc/faker2/main/jd_cfd.hb.js,tag=财富岛兑换红包
 ============Surge=============
-财富岛兑换红包 = type=cron,cronexp="58 * * * *",wake-system=1,timeout=3600,script-path=https://raw.githubusercontent.com/okyyds/yydspure/master/jd_cfd.hb.js
+财富岛兑换红包 = type=cron,cronexp="50 * * * *",wake-system=1,timeout=3600,script-path=https://raw.githubusercontent.com/shufflewzc/faker2/main/jd_cfd.hb.js
 ===========小火箭========
-财富岛兑换红包 = type=cron,script-path=https://raw.githubusercontent.com/okyyds/yydspure/master/jd_cfd.hb.jss, cronexpr="58 * * * *", timeout=3600, enable=true
+财富岛兑换红包 = type=cron,script-path=https://raw.githubusercontent.com/shufflewzc/faker2/main/jd_cfd.hb.jss, cronexpr="50 * * * *", timeout=3600, enable=true
  */
 const $ = new Env('财富岛兑换红包');
 CryptoScripts()
@@ -28,7 +29,7 @@ function randomString(e) {
 }
 
 
-$.appId = "92a36";
+$.appId = 10032;
 
 
 $.exchangeItems = []
@@ -167,7 +168,7 @@ async function readExchangeItem() {
         // 2已兑
 
         // let strPrizeNames = ['11元', '1元', '111元', '100元',]
-        let strPrizeNames = ['100元', '1元', '0.5元']
+        let strPrizeNames = ['1元', '0.5元', '0.1元']
         await ExchangeState()
         if ($.exchangeData.hongbao) {
             for (let i = 0; i < $.exchangeData.hongbao.length; i++) {
@@ -291,7 +292,7 @@ async function requestAlgo() {
             'Accept-Language': 'zh-CN,zh;q=0.9,zh-TW;q=0.8,en;q=0.7'
         },
         'body': JSON.stringify({
-            "version": "3.0",
+            "version": "1.0",
             "fp": $.fp,
             "appId": $.appId,
             "timestamp": Date.now(),
@@ -348,7 +349,7 @@ function decrypt(time, stk, type, url) {
             st += `${item}:${getUrlQueryParams(url, item)}${index === stk.split(',').length - 1 ? '' : '&'}`;
         })
         const hash2 = $.CryptoJS.HmacSHA256(st, hash1.toString()).toString($.CryptoJS.enc.Hex);
-return encodeURIComponent(["".concat(timestamp.toString()), "".concat($.fp.toString()), "".concat($.appId.toString()), "".concat($.token), "".concat(hash2), "".concat("3.0"), "".concat(time)].join(";"))
+        return encodeURIComponent(["".concat(timestamp.toString()), "".concat($.fp.toString()), "".concat($.appId.toString()), "".concat($.token), "".concat(hash2)].join(";"))
     } else {
         return encodeURIComponent('20210713151140309;3329030085477162;10032;tk01we5431d52a8nbmxySnZya05SXBQSsarucS7aqQIUX98n+iAZjIzQFpu6+ZjRvOMzOaVvqHvQz9pOhDETNW7JmftM;3e219f9d420850cadd117e456d422e4ecd8ebfc34397273a5378a0edc70872b9')
     }
@@ -2248,3 +2249,4 @@ function Env(t, e) {
         }
     }(t, e)
 }
+
